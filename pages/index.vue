@@ -87,7 +87,7 @@ export default {}
     font-size: 6vw;
   }
   .text-description {
-    
+
   }
 }
 </style>
