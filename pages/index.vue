@@ -32,6 +32,7 @@ export default {}
 }
 .product-photo {
   display: flex;
+  flex-flow: column;
   width: 35vw;
   height: auto;
   margin: 2rem;
@@ -73,7 +74,7 @@ export default {}
   .product-container {
     flex-flow: column;
     padding: 1rem;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
   .product-text {
     width: 100%;
@@ -81,6 +82,7 @@ export default {}
   }
   .product-photo {
     width: 100%;
+    margin: 0;
   }
   .buy-button {
     width: 100%;
