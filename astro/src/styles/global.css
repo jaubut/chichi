@@ -7,7 +7,7 @@
   --ink: #0d0d0d;
   --gray-50: #f6f6f4;
   --gray-200: #e6e6e3;
-  --gray-500: #74746f;
+  --gray-500: #6a6a65;
   --blue: #2357ff;
   --coral: #ff6b57;
   --pink: #ff5fae;
@@ -18,7 +18,6 @@
   --max: 1320px;
   --header-h: 64px;
 }
-@media (max-width: 640px) { :root { --header-h: 100px; } }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; }
 html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--header-h) + env(safe-area-inset-top) + 8px); }
@@ -47,10 +46,10 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing:
   transition: transform 160ms ease, background-color 160ms ease;
 }
 .btn:active { transform: scale(0.98); }
-.btn:disabled { background: var(--gray-200); color: var(--gray-500); box-shadow: none; cursor: not-allowed; transform: none; }
+.btn:disabled, .btn[aria-disabled="true"] { background: var(--gray-200); color: var(--gray-500); box-shadow: none; cursor: not-allowed; transform: none; }
 .btn--ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
 @media (hover: hover) {
-  .btn:not(:disabled):hover { background: var(--blue); }
+  .btn:not(:disabled, [aria-disabled="true"]):hover { background: var(--blue); }
   .btn--ghost:hover { background: var(--ink); color: var(--white); }
 }
 

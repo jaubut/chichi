@@ -4,7 +4,7 @@ import Header from "../components/Header.astro"
 import Footer from "../components/Footer.astro"
 
 interface Props { title?: string; description?: string; lang?: string }
-const { title, description = "chichi — boutique", lang = "fr" } = Astro.props
+const { title, description = "chichi — céramique", lang = "fr" } = Astro.props
 ---
 <!doctype html>
 <html lang={lang}>
@@ -14,8 +14,6 @@ const { title, description = "chichi — boutique", lang = "fr" } = Astro.props
     <title>{title ? `${title} — chichi` : "chichi"}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#ffffff" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/icon.png" />
   </head>
   <body>
     <Header />
