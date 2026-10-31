@@ -1,0 +1,22 @@
+---
+// The soft amorphous mark: a gradient blob in CSS (a placeholder until a designed logo asset exists).
+interface Props { size?: number; class?: string; animated?: boolean }
+const { size = 40, class: className, animated = false } = Astro.props
+---
+<span class:list={["mark", className, { animated }]} style={`--s:${size}px`} aria-hidden="true"></span>
+
+<style>
+  .mark {
+    display: inline-block; width: var(--s); height: var(--s); flex: none;
+    border-radius: 58% 42% 55% 45% / 48% 60% 40% 52%;
+    background:
+      radial-gradient(circle at 30% 30%, var(--yellow) 0 22%, transparent 48%),
+      radial-gradient(circle at 75% 35%, var(--pink) 0 18%, transparent 52%),
+      radial-gradient(circle at 60% 80%, var(--blue) 0 20%, transparent 55%),
+      var(--coral);
+  }
+  .animated { animation: morph 9s ease-in-out infinite alternate; }
+  @keyframes morph {
+    to { border-radius: 42% 58% 45% 55% / 60% 44% 56% 40%; transform: rotate(14deg); }
+  }
+</style>

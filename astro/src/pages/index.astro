@@ -1,0 +1,53 @@
+---
+import { getCollection } from "astro:content"
+import Base from "../layouts/Base.astro"
+import Mark from "../components/Mark.astro"
+import ProductCard from "../components/ProductCard.astro"
+
+const products = await getCollection("products")
+const [first] = products
+---
+<Base>
+  <section class="hero">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="wrap center">
+      <Mark size={120} animated />
+      <h1 class="word">chichi</h1>
+      {first && (
+        <div class="actions">
+          <a class="btn" href={`/produits/${first.id}/`}>{first.data.buyUrl ? `${first.data.cta} ${first.data.price} $` : `Voir le produit · ${first.data.price} $`}</a>
+          <a class="btn btn--ghost" href="#collection">Boutique</a>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <section id="collection" class="wrap collection" aria-labelledby="collection-title">
+    <div class="head">
+      <h2 id="collection-title">Boutique</h2>
+      <span class="eyebrow">{products.length} {products.length === 1 ? "produit" : "produits"}</span>
+    </div>
+    <ul class="grid">
+      {products.map((p, i) => <li><ProductCard product={p} eager={i < 4} /></li>)}
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .hero { position: relative; overflow: hidden; padding-block: clamp(4rem, 14vw, 9rem) clamp(3rem, 10vw, 6rem); }
+  .glow { position: absolute; inset: -30% -10% auto; height: 120%; background:
+      radial-gradient(40% 40% at 30% 40%, color-mix(in srgb, var(--yellow) 45%, transparent), transparent 70%),
+      radial-gradient(35% 35% at 70% 35%, color-mix(in srgb, var(--pink) 28%, transparent), transparent 70%),
+      radial-gradient(30% 30% at 55% 70%, color-mix(in srgb, var(--blue) 18%, transparent), transparent 70%);
+    filter: blur(20px); pointer-events: none; }
+  .center { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.25rem; }
+  .word { font-size: clamp(4.5rem, 20vw, 13rem); font-weight: 700; letter-spacing: -0.06em; line-height: 0.85; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1rem; }
+
+  .head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--gray-200); }
+  h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 2.5vw, 2rem); list-style: none; padding: 0; }
+  @media (min-width: 900px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  /* One product: one card, not a half-empty row. */
+  .grid:has(> li:only-child) { grid-template-columns: minmax(0, 26rem); justify-content: center; }
+</style>

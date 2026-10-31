@@ -1,0 +1,40 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content"
+import Base from "../layouts/Base.astro"
+
+export async function getStaticPaths() {
+  const pages = await getCollection("pages")
+  return pages.map((page) => ({ params: { slug: page.id }, props: { page } }))
+}
+
+interface Props { page: CollectionEntry<"pages"> }
+const { page } = Astro.props
+const { Content } = await render(page)
+---
+<Base title={page.data.title} description={page.data.description}>
+  <article class="wrap prose" lang={page.data.lang}>
+    <p class="eyebrow">Infos</p>
+    <h1>{page.data.title}</h1>
+    <p class="lede">{page.data.description}</p>
+    <div class="body"><Content /></div>
+  </article>
+</Base>
+
+<style>
+  .prose { max-width: 46rem; padding-top: clamp(2.5rem, 8vw, 6rem); }
+  h1 { font-size: clamp(2.5rem, 8vw, 4.5rem); margin: 0.75rem 0 1.25rem; }
+  .lede { font-size: 1.125rem; color: var(--gray-500); padding-bottom: 2rem; border-bottom: 1px solid var(--gray-200); margin-bottom: 2rem; }
+  .body :global(h2) { font-size: 1.5rem; margin: 2.5rem 0 0.75rem; }
+  .body :global(p) { margin: 0.75rem 0; overflow-wrap: anywhere; }
+  .body :global(code) { font-size: 0.875em; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 0.1em 0.35em; }
+  .body :global(a) { color: var(--blue); overflow-wrap: anywhere; }
+  .body :global(h3) { font-size: 1.2rem; margin: 2rem 0 0.5rem; }
+  .body :global(ul), .body :global(ol) { padding-left: 1.25rem; margin: 0.75rem 0; }
+  .body :global(li) { margin: 0.25rem 0; }
+  .body :global(blockquote) { border-left: 3px solid var(--yellow); padding-left: 1rem; margin: 1rem 0; color: var(--gray-500); }
+  .body :global(pre) { max-width: 100%; overflow-x: auto; margin: 1rem 0; }
+  .body :global(pre code) { font-size: inherit; background: none; border: 0; padding: 0; }
+  .body :global(table) { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9375rem; }
+  .body :global(th), .body :global(td) { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--gray-200); }
+  .body :global(pre) { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 12px; padding: 1rem; font-size: 0.875rem; }
+</style>

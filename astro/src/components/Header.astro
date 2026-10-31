@@ -1,0 +1,35 @@
+---
+import Mark from "./Mark.astro"
+import { getNavLinks } from "../nav"
+const path = Astro.url.pathname
+const { links, productHref, price } = await getNavLinks()
+---
+<header class="top">
+  <nav class="wrap bar" aria-label="Principal">
+    <ul class="links">
+      {links.map((l) => (
+        <li><a href={l.href} aria-current={path === l.href ? "page" : undefined}>{l.label}</a></li>
+      ))}
+    </ul>
+    <a href="/" class="brand" aria-label="chichi, accueil"><Mark size={26} /><span>chichi</span></a>
+    {price !== null && <a href={productHref} class="cta">{price} $</a>}
+  </nav>
+</header>
+
+<style>
+  .top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--white) 88%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-bottom: 1px solid var(--gray-200); padding-top: env(safe-area-inset-top); }
+  .bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 60px; }
+  .links { display: flex; gap: 0.25rem; list-style: none; padding: 0; margin-left: -0.75rem; }
+  .links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.75rem; font-size: 0.875rem; font-weight: 500; text-decoration: none; color: var(--gray-500); }
+  .links a[aria-current="page"] { color: var(--ink); }
+  @media (hover: hover) { .links a:hover { color: var(--ink); } .cta:hover { background: var(--blue); } }
+  .brand { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.03em; text-decoration: none; }
+  .cta { justify-self: end; display: inline-flex; align-items: center; min-height: 44px; padding: 0 1.125rem; border-radius: 999px; background: var(--ink); color: var(--white); font-family: var(--font-display); font-weight: 600; font-size: 0.875rem; text-decoration: none; }
+  /* Phone: brand + price on the first row, the links on a second row under it. */
+  @media (max-width: 640px) {
+    .bar { grid-template-columns: 1fr auto; grid-template-areas: "brand cta" "links links"; padding-bottom: 0.25rem; }
+    .brand { grid-area: brand; }
+    .cta { grid-area: cta; }
+    .links { grid-area: links; }
+  }
+</style>
