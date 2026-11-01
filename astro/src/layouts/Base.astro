@@ -1,4 +1,5 @@
 ---
+import "lenis/dist/lenis.css"
 import "../styles/global.css"
 import Header from "../components/Header.astro"
 import Footer from "../components/Footer.astro"
@@ -15,11 +16,19 @@ const { title, description = "chichi — céramique", lang = "fr", accent = "blu
     <title>{title ? `${title} — chichi` : "chichi"}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#0d0d0d" />
+    <!-- html.js gates the home reveal; dropped after 2.5s if the reveal script never confirms (data-reveal). -->
+    <script is:inline>(() => { const d = document.documentElement; d.classList.add("js"); setTimeout(() => { if (!d.dataset.reveal) d.classList.remove("js") }, 2500) })()</script>
   </head>
   <body style={`--accent: var(--${accent})`}>
     <div class="field" aria-hidden="true"></div>
     <Header />
     <main><slot /></main>
     <Footer />
+    <script>
+      // skylrk's smooth wheel scroll (Lenis, lerp 0.1). Mouse/trackpad only: touch keeps native scrolling.
+      if (matchMedia("(hover: hover) and (pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        import("lenis").then(({ default: Lenis }) => new Lenis({ lerp: 0.1, smoothWheel: true, autoRaf: true }))
+      }
+    </script>
   </body>
 </html>

@@ -23,7 +23,7 @@ const details = [
 <Base title={title} description={`${title}, céramique — ${formatPrice(price)}`} accent={accent}>
   <article class="pdp">
     <div class="stage">
-      <ul class="photos" aria-label={`Photos, ${photos.length}`} tabindex={photos.length > 1 ? 0 : undefined}>
+      <ul class="photos" data-lenis-prevent-horizontal aria-label={`Photos, ${photos.length}`} tabindex={photos.length > 1 ? 0 : undefined}>
         {photos.map((p, i) => (
           <li id={`photo-${i + 1}`}><Image src={p} alt={i === 0 ? photoAlt : `${photoAlt} (${i + 1})`} widths={[600, 900, 1200]} sizes="(min-width: 900px) 40vw, 86vw" loading={i === 0 ? "eager" : "lazy"} fetchpriority={i === 0 ? "high" : "auto"} /></li>
         ))}

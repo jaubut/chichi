@@ -2,13 +2,13 @@
 import { Image } from "astro:assets"
 import type { CollectionEntry } from "astro:content"
 import { formatPrice, statusLabel } from "../nav"
-interface Props { product: CollectionEntry<"products">; eager?: boolean }
-const { product, eager = false } = Astro.props
+interface Props { product: CollectionEntry<"products">; eager?: boolean; priority?: boolean }
+const { product, eager = false, priority = false } = Astro.props
 const { title, price, photos, status } = product.data
 const [cover] = photos
 ---
 <a class="card" href={`/produits/${product.id}/`}>
-  {cover && <Image src={cover} alt="" widths={[360, 540, 720]} sizes="(min-width: 900px) 20vw, 70vw" loading={eager ? "eager" : "lazy"} />}
+  {cover && <Image src={cover} alt="" widths={[360, 540, 720]} sizes="(min-width: 900px) 20vw, 70vw" loading={eager ? "eager" : "lazy"} fetchpriority={priority ? "high" : undefined} />}
   <span class="label">
     <span class="tag">{title}</span>
     <span class="tag tag--dark">{status === "available" ? formatPrice(price) : `[ ${statusLabel[status]} ]`}</span>

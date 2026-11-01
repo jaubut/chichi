@@ -11,10 +11,24 @@ const products = await getProducts()
   <section id="collection" class="field-grid wrap" aria-labelledby="collection-title">
     <h2 id="collection-title" class="sr-only">Boutique</h2>
     {products.length > 0
-      ? <ul class="pieces">{products.map((p, i) => <li style={`--i:${i}`}><ProductCard product={p} eager={i < 4} /></li>)}</ul>
+      ? <ul class="pieces">{products.map((p, i) => <li style={`--i:${i}`} data-first={i < 2 ? "" : undefined}><ProductCard product={p} eager={i < 4} priority={i === 0} /></li>)}</ul>
       : <div class="empty glass"><Mark size={48} /><p class="mono">[ Les premières pièces arrivent bientôt ]</p></div>}
   </section>
 </Base>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.filter((e) => e.isIntersecting).forEach((e, n) => {
+      const li = e.target as HTMLElement
+      li.style.setProperty("--d", `${n * 0.005}s`)
+      li.classList.add("is-in")
+      io.unobserve(li)
+    })
+  }, { rootMargin: "0px 0px -10% 0px" })
+  document.querySelectorAll(".pieces li").forEach((li) => io.observe(li))
+  // Tells the head watchdog the reveal is live; without it the tiles are shown after 2.5s.
+  document.documentElement.dataset.reveal = "1"
+</script>
 
 <style>
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -42,5 +56,18 @@ const products = await getProducts()
   /* Slow drift on desktop, staggered per piece (decorative, off with reduced motion). */
   @media (min-width: 900px) { .pieces li { animation: drift calc(9s + var(--i) * 0.7s) ease-in-out calc(var(--i) * -1.3s) infinite alternate; } }
   @keyframes drift { from { translate: 0 -6px; } to { translate: 0 8px; } }
+  /* Reveal on scroll, as skylrk: each piece fades in once as it crosses 10% above the fold, its tags 0.45s later.
+     Opacity only (no layout shift); hidden only when JS runs and motion is allowed. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .pieces li:not([data-first]) { opacity: 0; transition: opacity 0.4s cubic-bezier(0.87, 0, 0.13, 1) var(--d, 0s); }
+    :global(html.js) .pieces li:not([data-first]) :global(.label) { opacity: 0; transition: opacity 0.35s cubic-bezier(0.87, 0, 0.13, 1) calc(var(--d, 0s) + 0.45s); }
+    :global(html.js) .pieces li.is-in, :global(html.js) .pieces li.is-in :global(.label) { opacity: 1; }
+    /* A keyboard-focused tile is never invisible, even inside the bottom 10% band. */
+    :global(html.js) .pieces li:focus-within, :global(html.js) .pieces li:focus-within :global(.label) { opacity: 1; transition-delay: 0s; }
+    /* First fold fades on paint, not on JS, so LCP isn't held back by the script. */
+    .pieces li[data-first] :global(.card) { animation: reveal 0.4s cubic-bezier(0.87, 0, 0.13, 1) backwards; }
+    .pieces li[data-first] :global(.label) { animation: reveal 0.35s cubic-bezier(0.87, 0, 0.13, 1) 0.45s backwards; }
+  }
+  @keyframes reveal { from { opacity: 0; } }
   .empty { display: flex; flex-direction: column; align-items: center; gap: 1rem; max-width: 28rem; margin: 10vh auto; padding: 2.5rem 1.5rem; border-radius: 16px; text-align: center; }
 </style>
