@@ -2,13 +2,14 @@
 import { Image } from "astro:assets"
 import type { CollectionEntry } from "astro:content"
 import { formatPrice, statusLabel } from "../nav"
-interface Props { product: CollectionEntry<"products">; eager?: boolean; priority?: boolean }
-const { product, eager = false, priority = false } = Astro.props
+// clone: a copy in the endless listing, kept out of the tab order (screen readers skip the whole copy).
+interface Props { product: CollectionEntry<"products">; eager?: boolean; priority?: boolean; clone?: boolean }
+const { product, eager = false, priority = false, clone = false } = Astro.props
 const { title, price, photos, status } = product.data
 const [cover] = photos
 ---
-<a class="card" href={`/produits/${product.id}/`}>
-  {cover && <Image src={cover} alt="" widths={[360, 540, 720]} sizes="(min-width: 900px) 20vw, 70vw" loading={eager ? "eager" : "lazy"} fetchpriority={priority ? "high" : undefined} />}
+<a class="card" href={`/produits/${product.id}/`} tabindex={clone ? -1 : undefined}>
+  {cover && <Image src={cover} alt="" widths={[360, 540, 720, 1080]} sizes="(min-width: 900px) 20vw, 86vw" loading={eager ? "eager" : "lazy"} fetchpriority={priority ? "high" : undefined} />}
   <span class="label">
     <span class="tag">{title}</span>
     <span class="tag tag--dark">{status === "available" ? formatPrice(price) : `[ ${statusLabel[status]} ]`}</span>

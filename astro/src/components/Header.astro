@@ -4,7 +4,7 @@ import { getArtist, getNavLinks } from "../nav"
 const path = Astro.url.pathname
 const [{ links, count }, artist] = await Promise.all([getNavLinks(), getArtist()])
 ---
-<header class="top">
+<header class="top" transition:name="header" transition:animate="none">
   <nav class="bar" aria-label="Principal">
     <div class="group">
       <a href="/" class="brand glass" aria-label="chichi, accueil"><Mark size={22} /><span>chichi</span></a>

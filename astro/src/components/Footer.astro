@@ -2,8 +2,15 @@
 import { getNavLinks } from "../nav"
 const { links } = await getNavLinks()
 const year = new Date().getFullYear()
+// Same fade as <main> (see Base.astro).
+const ease = "cubic-bezier(0.23, 1, 0.32, 1)"
+const fade = {
+  old: { name: "page-out", duration: "0.35s", easing: ease, fillMode: "both" },
+  new: { name: "page-in", duration: "0.35s", delay: "0.35s", easing: ease, fillMode: "both" },
+}
+const pageFade = { forwards: fade, backwards: fade }
 ---
-<footer class="foot mono">
+<footer class="foot mono" transition:name="foot" transition:animate={pageFade}>
   <div class="bar glass">
   <p>© {year} chichi</p>
   <ul>
