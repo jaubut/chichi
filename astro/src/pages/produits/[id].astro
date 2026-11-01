@@ -1,0 +1,82 @@
+---
+import { Image } from "astro:assets"
+import { render, type CollectionEntry } from "astro:content"
+import Base from "../../layouts/Base.astro"
+import { formatPrice, getProducts, statusLabel } from "../../nav"
+
+export async function getStaticPaths() {
+  const products = await getProducts()
+  return products.map((product) => ({ params: { id: product.id }, props: { product } }))
+}
+
+interface Props { product: CollectionEntry<"products"> }
+const { product } = Astro.props
+const { title, price, photos, photoAlt, status, clay, glaze, dimensions, care, buyUrl, accent } = product.data
+const { Content } = await render(product)
+const details = [
+  ["Argile", clay],
+  ["Émail", glaze],
+  ["Dimensions", dimensions],
+  ["Entretien", care],
+].filter((d): d is [string, string] => Boolean(d[1]))
+---
+<Base title={title} description={`${title}, céramique — ${formatPrice(price)}`}>
+  <article class="wrap product" style={`--accent: var(--${accent})`}>
+    <ul class="photos" aria-label={`Photos, ${photos.length}`} tabindex="0">
+      {photos.map((p, i) => (
+        <li><Image src={p} alt={i === 0 ? photoAlt : `${photoAlt} (${i + 1})`} widths={[600, 900, 1200]} sizes="(min-width: 900px) 55vw, 100vw" loading={i === 0 ? "eager" : "lazy"} fetchpriority={i === 0 ? "high" : "auto"} /></li>
+      ))}
+    </ul>
+    <div class="text">
+      <a href="/#collection" class="eyebrow back"><span aria-hidden="true">←</span> Boutique</a>
+      <h1>{title}</h1>
+      <p class="price">{formatPrice(price)} <span class={`status status--${status}`}>{statusLabel[status]}</span></p>
+      <div class="body"><Content /></div>
+      {details.length > 0 && (
+        <dl class="details">
+          {details.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+        </dl>
+      )}
+      {status !== "available"
+        ? <p class="note">{status === "sold" ? "Pièce unique, déjà vendue." : "Pièce réservée."}</p>
+        : buyUrl
+          ? <a class="btn buy" href={buyUrl}>Acheter · {formatPrice(price)}</a>
+          : <>
+              <button type="button" class="btn buy" aria-disabled="true" aria-describedby="buy-note">Acheter · {formatPrice(price)}</button>
+              <p class="note" id="buy-note">Achat en ligne bientôt disponible.</p>
+            </>}
+    </div>
+  </article>
+</Base>
+
+<style>
+  .product { display: grid; gap: clamp(1.5rem, 5vw, 4rem); padding-top: clamp(1.5rem, 5vw, 4rem); align-items: start; }
+  @media (min-width: 900px) { .product { grid-template-columns: 1.1fr 1fr; } .text { position: sticky; top: calc(var(--header-h) + 2rem); } }
+  .photos { display: grid; gap: 1rem; list-style: none; padding: 0; }
+  .photos li { aspect-ratio: 4 / 5; border-radius: 24px; overflow: hidden; background: var(--gray-50); }
+  .photos :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  /* Phone: the photos swipe sideways instead of stacking a screen each. */
+  @media (max-width: 899px) {
+    .photos { grid-auto-flow: column; grid-auto-columns: 88%; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); scrollbar-width: none; }
+    .photos:has(> li:only-child) { grid-auto-columns: 100%; }
+    .photos li { scroll-snap-align: center; aspect-ratio: 1; }
+  }
+  .text { display: flex; flex-direction: column; gap: 1rem; max-width: 34rem; }
+  .back { display: inline-flex; gap: 0.375rem; min-height: 44px; align-items: center; text-decoration: none; }
+  @media (hover: hover) { .back:hover { color: var(--ink); } }
+  h1 { font-size: clamp(2.75rem, 8vw, 5rem); }
+  .price { display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; }
+  .status { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8125rem; background: color-mix(in srgb, var(--accent) 22%, var(--white)); }
+  .status--reserved { background: var(--gray-200); }
+  .status--sold { background: var(--ink); color: var(--white); }
+  .body { color: var(--gray-500); }
+  .body :global(p + p) { margin-top: 0.75rem; }
+  .details { display: grid; border-top: 1px solid var(--gray-200); }
+  .details div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--gray-200); font-size: 0.9375rem; }
+  dt { color: var(--gray-500); }
+  dd { text-align: right; }
+  @media (max-width: 640px) { .details div { flex-direction: column; gap: 0.125rem; } dd { text-align: left; } }
+  .buy { align-self: flex-start; min-height: 56px; padding-inline: 2rem; font-size: 1.125rem; margin-top: 0.5rem; }
+  @media (max-width: 640px) { .buy { align-self: stretch; } }
+  .note { font-size: 0.875rem; color: var(--gray-500); }
+</style>

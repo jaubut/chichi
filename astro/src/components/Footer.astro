@@ -1,0 +1,25 @@
+---
+import Mark from "./Mark.astro"
+import { getNavLinks } from "../nav"
+const { links } = await getNavLinks()
+const year = new Date().getFullYear()
+---
+<footer class="foot">
+  <div class="wrap rows">
+    <a href="/" class="brand" aria-label="chichi, accueil"><Mark size={22} /><span>chichi</span></a>
+    <ul>
+      {links.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+    </ul>
+    <p class="fine">© {year} chichi</p>
+  </div>
+</footer>
+
+<style>
+  .foot { margin-top: clamp(4rem, 10vw, 8rem); border-top: 1px solid var(--gray-200); padding-bottom: env(safe-area-inset-bottom); }
+  .rows { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; padding-block: 2rem; }
+  .brand { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; font-family: var(--font-display); font-weight: 700; text-decoration: none; }
+  ul { display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; list-style: none; padding: 0; }
+  ul a { display: inline-flex; min-height: 44px; align-items: center; font-size: 0.875rem; color: var(--gray-500); text-decoration: none; }
+  @media (hover: hover) { ul a:hover { color: var(--ink); } }
+  .fine { font-size: 0.8125rem; color: var(--gray-500); }
+</style>
