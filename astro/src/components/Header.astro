@@ -1,37 +1,38 @@
 ---
 import Mark from "./Mark.astro"
-import { getNavLinks } from "../nav"
+import { getArtist, getNavLinks } from "../nav"
 const path = Astro.url.pathname
-const { links, count } = await getNavLinks()
+const [{ links, count }, artist] = await Promise.all([getNavLinks(), getArtist()])
 ---
 <header class="top">
-  <nav class="wrap bar" aria-label="Principal">
-    <ul class="links">
-      {links.map((l) => (
-        <li class:list={{ dup: count > 0 && l.href === "/#collection" }}><a href={l.href} aria-current={path === l.href ? "page" : undefined}>{l.label}</a></li>
-      ))}
-    </ul>
-    <a href="/" class="brand" aria-label="chichi, accueil"><Mark size={26} /><span>chichi</span></a>
-    {count > 0 && <a href="/#collection" class="cta">{count} {count === 1 ? "pièce" : "pièces"}</a>}
+  <nav class="bar" aria-label="Principal">
+    <div class="group">
+      <a href="/" class="brand glass" aria-label="chichi, accueil"><Mark size={22} /><span>chichi</span></a>
+      {count > 0 && <a href="/#collection" class="count glass mono" aria-label={`${count} ${count === 1 ? "pièce" : "pièces"}`}>{count}</a>}
+      <ul class="links glass">
+        {links.map((l) => <li><a href={l.href} aria-current={path === l.href ? "page" : undefined}>{l.label}</a></li>)}
+      </ul>
+    </div>
+    <p class="meta mono glass">[ Céramique{artist && ` · ${artist.data.name}`} ]</p>
   </nav>
 </header>
 
 <style>
-  .top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--white) 88%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-bottom: 1px solid var(--gray-200); padding-top: env(safe-area-inset-top); }
-  .bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 60px; }
-  .links { display: flex; gap: 0.25rem; list-style: none; padding: 0; margin-left: -0.75rem; }
-  .links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.75rem; font-size: 0.875rem; font-weight: 500; text-decoration: none; color: var(--gray-500); }
-  .links a[aria-current="page"] { color: var(--ink); }
-  @media (hover: hover) { .links a:hover { color: var(--ink); } .cta:hover { background: var(--blue); } }
-  .brand { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.03em; text-decoration: none; }
-  .cta { justify-self: end; display: inline-flex; align-items: center; min-height: 44px; padding: 0 1.125rem; border-radius: 999px; background: var(--ink); color: var(--white); font-family: var(--font-display); font-weight: 600; font-size: 0.875rem; text-decoration: none; }
-  /* Phone: one row, brand · Infos · pieces. The pill already goes to the boutique, so its link hides. */
+  .top { position: fixed; inset: 0 0 auto; z-index: 10; padding: calc(env(safe-area-inset-top) + clamp(0.75rem, 2vw, 1.75rem)) max(var(--gutter), env(safe-area-inset-right)) 0 max(var(--gutter), env(safe-area-inset-left)); pointer-events: none; }
+  .bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+  .group { display: flex; align-items: center; gap: 0.375rem; pointer-events: auto; }
+  .brand { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 44px; padding: 0 1.125rem 0 0.75rem; border-radius: 999px; font-weight: 700; font-size: 1rem; letter-spacing: 0.32em; text-transform: uppercase; text-decoration: none; }
+  .count { display: inline-grid; place-items: center; min-width: 44px; height: 44px; border-radius: 999px; text-decoration: none; }
+  .links { display: flex; list-style: none; padding: 0 0.375rem; border-radius: 999px; }
+  .links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.75rem; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; text-decoration: none; color: var(--text-dim); }
+  .links a[aria-current="page"] { color: var(--text); }
+  @media (hover: hover) { .links a:hover { color: var(--text); } }
+  .meta { pointer-events: auto; display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; border-radius: 999px; }
+  /* Phone: brand pill · count · Infos; the boutique link duplicates the count pill so it hides. */
   @media (max-width: 640px) {
-    .bar { grid-template-columns: 1fr auto auto; grid-template-areas: "brand links cta"; gap: 0.25rem; }
-    .links { margin-left: 0; }
-    .dup { display: none; }
-    .brand { grid-area: brand; }
-    .cta { grid-area: cta; }
-    .links { grid-area: links; }
+    .meta { display: none; }
+    .links li:first-child { display: none; }
+    .group { width: 100%; }
+    .brand { flex: 1; justify-content: center; }
   }
 </style>

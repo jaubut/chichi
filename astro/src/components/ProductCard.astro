@@ -4,33 +4,21 @@ import type { CollectionEntry } from "astro:content"
 import { formatPrice, statusLabel } from "../nav"
 interface Props { product: CollectionEntry<"products">; eager?: boolean }
 const { product, eager = false } = Astro.props
-const { title, price, photos, status, accent } = product.data
+const { title, price, photos, status } = product.data
 const [cover] = photos
 ---
-<a class="card" href={`/produits/${product.id}/`} style={`--accent: var(--${accent})`}>
-  <div class="shot">
-    {cover && <Image src={cover} alt="" widths={[480, 720, 960]} sizes="(min-width: 900px) 25vw, 50vw" loading={eager ? "eager" : "lazy"} />}
-    {status !== "available" && <span class="status">{statusLabel[status]}</span>}
-  </div>
-  <div class="meta">
-    <h3>{title}</h3>
-    <span class:list={["price", { sold: status === "sold" }]}>{formatPrice(price)}</span>
-  </div>
+<a class="card" href={`/produits/${product.id}/`}>
+  {cover && <Image src={cover} alt="" widths={[360, 540, 720]} sizes="(min-width: 900px) 20vw, 70vw" loading={eager ? "eager" : "lazy"} />}
+  <span class="label">
+    <span class="tag">{title}</span>
+    <span class="tag tag--dark">{status === "available" ? formatPrice(price) : `[ ${statusLabel[status]} ]`}</span>
+  </span>
 </a>
 
 <style>
-  .card { display: block; text-decoration: none; }
-  .shot { position: relative; aspect-ratio: 4 / 5; background: var(--white); border: 1px solid var(--gray-200); border-radius: 18px; overflow: hidden; transition: border-color 160ms ease; }
-  .shot :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform 320ms ease; }
-  .status { position: absolute; top: 0.75rem; left: 0.75rem; padding: 0.25rem 0.625rem; border-radius: 999px; background: var(--ink); color: var(--white); font-family: var(--font-display); font-size: 0.75rem; font-weight: 600; }
-  @media (hover: hover) {
-    .card:hover .shot { border-color: var(--accent); }
-    .card:hover .shot :global(img) { transform: scale(1.03); }
-  }
-  .card:active .shot { opacity: 0.85; }
-  .meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.75rem 0.25rem 0; }
-  h3 { font-size: 1rem; font-weight: 600; text-wrap: balance; }
-  @media (max-width: 640px) { .meta { flex-direction: column; align-items: flex-start; gap: 0.375rem; } }
-  .price { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 0.9375rem; white-space: nowrap; padding: 0.125rem 0.625rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 22%, var(--white)); }
-  .price.sold { background: var(--gray-50); color: var(--gray-500); text-decoration: line-through; }
+  .card { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-decoration: none; }
+  .card :global(img) { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.55); transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .label { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.375rem 0.5rem; text-align: center; }
+  @media (hover: hover) { .card:hover :global(img) { transform: translateY(-6px) scale(1.02); } }
+  .card:active :global(img) { transform: scale(0.98); }
 </style>

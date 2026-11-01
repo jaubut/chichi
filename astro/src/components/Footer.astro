@@ -1,25 +1,21 @@
 ---
-import Mark from "./Mark.astro"
 import { getNavLinks } from "../nav"
 const { links } = await getNavLinks()
 const year = new Date().getFullYear()
 ---
-<footer class="foot">
-  <div class="wrap rows">
-    <a href="/" class="brand" aria-label="chichi, accueil"><Mark size={22} /><span>chichi</span></a>
-    <ul>
-      {links.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
-    </ul>
-    <p class="fine">© {year} chichi</p>
+<footer class="foot mono">
+  <div class="bar glass">
+  <p>© {year} chichi</p>
+  <ul>
+    {links.map((l) => <li><a href={l.href}>[ {l.label} ]</a></li>)}
+  </ul>
   </div>
 </footer>
 
 <style>
-  .foot { margin-top: clamp(4rem, 10vw, 8rem); border-top: 1px solid var(--gray-200); padding-bottom: env(safe-area-inset-bottom); }
-  .rows { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; padding-block: 2rem; }
-  .brand { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; font-family: var(--font-display); font-weight: 700; text-decoration: none; }
-  ul { display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; list-style: none; padding: 0; }
-  ul a { display: inline-flex; min-height: 44px; align-items: center; font-size: 0.875rem; color: var(--gray-500); text-decoration: none; }
-  @media (hover: hover) { ul a:hover { color: var(--ink); } }
-  .fine { font-size: 0.8125rem; color: var(--gray-500); }
+  .foot { padding: clamp(3rem, 8vw, 6rem) max(var(--gutter), env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left)); }
+  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0 1.5rem; padding: 0 1rem; border-radius: 10px; color: var(--text-dim); }
+  ul { display: flex; gap: 0 1rem; list-style: none; padding: 0; }
+  a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; }
+  @media (hover: hover) { a:hover { color: var(--text); } }
 </style>

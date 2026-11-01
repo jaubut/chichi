@@ -2,51 +2,45 @@
 import Base from "../layouts/Base.astro"
 import Mark from "../components/Mark.astro"
 import ProductCard from "../components/ProductCard.astro"
-import { getArtist, getProducts } from "../nav"
+import { getProducts } from "../nav"
 
-const [products, artist] = await Promise.all([getProducts(), getArtist()])
+const products = await getProducts()
 ---
 <Base>
-  <section class="hero">
-    <div class="glow" aria-hidden="true"></div>
-    <div class="wrap center">
-      <Mark size={120} animated />
-      <p class="eyebrow">Céramique{artist && ` · ${artist.data.name}`}</p>
-      <h1 class="word">chichi</h1>
-      {(products.length > 0 || artist) && (
-        <div class="actions">
-          {products.length > 0 && <a class="btn" href="#collection">Voir les pièces</a>}
-          {artist && <a class="btn btn--ghost" href="/infos/">L’atelier</a>}
-        </div>
-      )}
-    </div>
-  </section>
-
-  <section id="collection" class="wrap collection" aria-labelledby="collection-title">
-    <div class="head">
-      <h2 id="collection-title">Boutique</h2>
-      {products.length > 0 && <span class="eyebrow">{products.length} {products.length === 1 ? "pièce" : "pièces"}</span>}
-    </div>
+  <h1 class="sr-only">chichi — céramique</h1>
+  <section id="collection" class="field-grid wrap" aria-labelledby="collection-title">
+    <h2 id="collection-title" class="sr-only">Boutique</h2>
     {products.length > 0
-      ? <ul class="grid">{products.map((p, i) => <li><ProductCard product={p} eager={i < 4} /></li>)}</ul>
-      : <div class="empty"><Mark size={56} /><p>Les premières pièces arrivent bientôt.</p></div>}
+      ? <ul class="pieces">{products.map((p, i) => <li style={`--i:${i}`}><ProductCard product={p} eager={i < 4} /></li>)}</ul>
+      : <div class="empty glass"><Mark size={48} /><p class="mono">[ Les premières pièces arrivent bientôt ]</p></div>}
   </section>
 </Base>
 
 <style>
-  .hero { position: relative; overflow: hidden; padding-block: clamp(4rem, 14vw, 9rem) clamp(3rem, 10vw, 6rem); }
-  .glow { position: absolute; inset: -30% -10% auto; height: 120%; background:
-      radial-gradient(40% 40% at 30% 40%, color-mix(in srgb, var(--yellow) 45%, transparent), transparent 70%),
-      radial-gradient(35% 35% at 70% 35%, color-mix(in srgb, var(--pink) 28%, transparent), transparent 70%),
-      radial-gradient(30% 30% at 55% 70%, color-mix(in srgb, var(--blue) 18%, transparent), transparent 70%);
-    pointer-events: none; }
-  .center { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.25rem; }
-  .word { font-size: clamp(4.5rem, 20vw, 13rem); font-weight: 700; letter-spacing: -0.06em; line-height: 0.85; }
-  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1rem; }
-
-  .head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--gray-200); }
-  h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
-  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 2.5vw, 2rem); list-style: none; padding: 0; }
-  @media (min-width: 900px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-  .empty { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: clamp(3rem, 10vw, 6rem) 1rem; border-radius: 24px; background: var(--gray-50); text-align: center; color: var(--gray-500); font-family: var(--font-display); font-size: 1.125rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .field-grid { padding-top: calc(var(--header-h) + env(safe-area-inset-top) + 2rem); }
+  .pieces { list-style: none; padding: 0; display: grid; gap: 0; }
+  /* Pieces float on the field: a loose 12-column constellation, each slot its own column, width and drop. */
+  @media (min-width: 900px) {
+    .pieces { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(1rem, 2vw, 2rem); row-gap: clamp(2rem, 5vw, 5rem); }
+    .pieces li { grid-column: var(--col); width: var(--w); justify-self: center; margin-top: var(--drop); }
+    .pieces li:nth-child(7n + 1) { --col: 2 / span 3; --w: 82%; --drop: 2vw; }
+    .pieces li:nth-child(7n + 2) { --col: 6 / span 3; --w: 70%; --drop: 0; }
+    .pieces li:nth-child(7n + 3) { --col: 10 / span 3; --w: 88%; --drop: 9vw; }
+    .pieces li:nth-child(7n + 4) { --col: 3 / span 3; --w: 76%; --drop: -1vw; }
+    .pieces li:nth-child(7n + 5) { --col: 7 / span 3; --w: 84%; --drop: 7vw; }
+    .pieces li:nth-child(7n + 6) { --col: 1 / span 3; --w: 72%; --drop: 4vw; }
+    .pieces li:nth-child(7n + 7) { --col: 5 / span 3; --w: 80%; --drop: 2vw; }
+  }
+  /* Phone: one piece per screen-ish, nudged left and right. */
+  @media (max-width: 899px) {
+    .pieces { row-gap: clamp(3.5rem, 14vw, 6rem); padding-block: 1rem 2rem; }
+    .pieces li { width: min(78%, 22rem); }
+    .pieces li:nth-child(odd) { justify-self: start; margin-left: 2%; }
+    .pieces li:nth-child(even) { justify-self: end; margin-right: 2%; }
+  }
+  /* Slow drift on desktop, staggered per piece (decorative, off with reduced motion). */
+  @media (min-width: 900px) { .pieces li { animation: drift calc(9s + var(--i) * 0.7s) ease-in-out calc(var(--i) * -1.3s) infinite alternate; } }
+  @keyframes drift { from { translate: 0 -6px; } to { translate: 0 8px; } }
+  .empty { display: flex; flex-direction: column; align-items: center; gap: 1rem; max-width: 28rem; margin: 10vh auto; padding: 2.5rem 1.5rem; border-radius: 16px; text-align: center; }
 </style>
