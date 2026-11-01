@@ -1,23 +1,77 @@
 ---
+import "lenis/dist/lenis.css"
 import "../styles/global.css"
+import { ClientRouter } from "astro:transitions"
 import Header from "../components/Header.astro"
 import Footer from "../components/Footer.astro"
 
-interface Props { title?: string; description?: string; lang?: string }
-const { title, description = "chichi — céramique", lang = "fr" } = Astro.props
+type Accent = "blue" | "coral" | "pink" | "yellow"
+// footer=false for the endless home listing, where the footer could never be reached (the header carries the same links).
+interface Props { title?: string; description?: string; lang?: string; accent?: Accent; footer?: boolean }
+const { title, description = "chichi — céramique", lang = "fr", accent = "blue", footer = true } = Astro.props
+
+// skylrk (Swup): the page fades out 0.35s, the next one fades in 0.35s; header and colour field stay put.
+// Content is named (main, foot) so it paints above the field group; the root itself does not animate.
+const ease = "cubic-bezier(0.23, 1, 0.32, 1)"
+const fade = {
+  old: { name: "page-out", duration: "0.35s", easing: ease, fillMode: "both" },
+  new: { name: "page-in", duration: "0.35s", delay: "0.35s", easing: ease, fillMode: "both" },
+}
+const pageFade = { forwards: fade, backwards: fade }
+// The field cross-fades to the next page's accent over 0.8s, like skylrk's gradient tween.
+const blend = {
+  old: { name: "page-out", duration: "0.8s", easing: ease, fillMode: "both" },
+  new: { name: "page-in", duration: "0.8s", easing: ease, fillMode: "both" },
+}
+const fieldBlend = { forwards: blend, backwards: blend }
 ---
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} transition:animate="none">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title ? `${title} — chichi` : "chichi"}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#0d0d0d" />
+    <!-- html.js gates the home reveal; dropped after 2.5s if the reveal script never confirms (data-reveal). -->
+    <ClientRouter />
+    <script is:inline>(() => { const d = document.documentElement; d.classList.add("js"); setTimeout(() => { if (!d.dataset.reveal) d.classList.remove("js") }, 2500) })()</script>
   </head>
   <body>
+    <!-- Two tint layers: a colour change cross-fades their opacity (compositor-only) instead of repainting the gradient. -->
+    <div class="field" aria-hidden="true" transition:name="field" transition:animate={fieldBlend}>
+      <div class="tint" data-on data-top style={`--accent: var(--${accent})`}></div>
+      <div class="tint" style={`--accent: var(--${accent})`}></div>
+    </div>
     <Header />
-    <main><slot /></main>
-    <Footer />
+    <main transition:name="main" transition:animate={pageFade}><slot /></main>
+    {footer && <Footer />}
+    <script>
+      import type Lenis from "lenis"
+      let lenis: Lenis | undefined
+      // skylrk's smooth wheel scroll (Lenis, lerp 0.1). Mouse/trackpad only: touch keeps native scrolling.
+      if (matchMedia("(hover: hover) and (pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        import("lenis").then(({ default: L }) => {
+          lenis = new L({ lerp: 0.1, smoothWheel: true, autoRaf: true })
+          ;(window as unknown as { chichiLenis?: Lenis }).chichiLenis = lenis // the home loop moves the scroll through it
+        })
+      }
+      // The router swaps <html> attributes: carry over the js/lenis classes, and re-arm the reveal watchdog.
+      document.addEventListener("astro:before-preparation", () => lenis?.stop())
+      document.addEventListener("astro:before-swap", (e) => {
+        const lenisOn = document.documentElement.classList.contains("lenis")
+        e.newDocument.documentElement.classList.add("js", ...(lenisOn ? ["lenis"] : []))
+      })
+      document.addEventListener("astro:after-swap", () => {
+        const d = document.documentElement
+        if (!document.querySelector(".pieces")) return
+        setTimeout(() => { if (!d.dataset.reveal) d.classList.remove("js") }, 2500)
+      })
+      document.addEventListener("astro:page-load", () => {
+        lenis?.resize()
+        lenis?.scrollTo(scrollY, { immediate: true, force: true })
+        lenis?.start()
+      })
+    </script>
   </body>
 </html>

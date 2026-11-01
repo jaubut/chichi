@@ -2,51 +2,211 @@
 import Base from "../layouts/Base.astro"
 import Mark from "../components/Mark.astro"
 import ProductCard from "../components/ProductCard.astro"
-import { getArtist, getProducts } from "../nav"
+import { getProducts } from "../nav"
 
-const [products, artist] = await Promise.all([getProducts(), getArtist()])
+const products = await getProducts()
+const last = products.length - 1
+// The listing never ends: five identical copies, the real one in the middle (the others are hidden from
+// assistive tech and the tab order). The script below silently moves the scroll by one copy's height
+// whenever you drift too far, so the end is never reached.
+const copies = [false, false, true, false, false]
 ---
-<Base>
-  <section class="hero">
-    <div class="glow" aria-hidden="true"></div>
-    <div class="wrap center">
-      <Mark size={120} animated />
-      <p class="eyebrow">Céramique{artist && ` · ${artist.data.name}`}</p>
-      <h1 class="word">chichi</h1>
-      {(products.length > 0 || artist) && (
-        <div class="actions">
-          {products.length > 0 && <a class="btn" href="#collection">Voir les pièces</a>}
-          {artist && <a class="btn btn--ghost" href="/infos/">L’atelier</a>}
-        </div>
-      )}
-    </div>
-  </section>
-
-  <section id="collection" class="wrap collection" aria-labelledby="collection-title">
-    <div class="head">
-      <h2 id="collection-title">Boutique</h2>
-      {products.length > 0 && <span class="eyebrow">{products.length} {products.length === 1 ? "pièce" : "pièces"}</span>}
-    </div>
+<Base accent={products[0]?.data.accent} footer={products.length === 0}>
+  <h1 class="sr-only">chichi — céramique</h1>
+  <section id="collection" class="field-grid wrap" aria-labelledby="collection-title">
+    <h2 id="collection-title" class="sr-only">Boutique</h2>
     {products.length > 0
-      ? <ul class="grid">{products.map((p, i) => <li><ProductCard product={p} eager={i < 4} /></li>)}</ul>
-      : <div class="empty"><Mark size={56} /><p>Les premières pièces arrivent bientôt.</p></div>}
+      ? <div class="loop">
+          {copies.map((real) => (
+            <ul class="pieces" data-real={real ? "" : undefined} aria-hidden={real ? undefined : "true"}>
+              {products.map((p, i) => (
+                <li style={`--i:${i}`} data-k={i} data-accent={p.data.accent} data-first={i < 2 ? "" : undefined}>
+                  <ProductCard product={p} eager={real && (i < 4 || i >= last - 1)} priority={real && i === 0} clone={!real} />
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      : <div class="empty glass"><Mark size={48} /><p class="mono">[ Les premières pièces arrivent bientôt ]</p></div>}
   </section>
+  <!-- Start on the real copy before first paint (layout is known: images carry their dimensions). -->
+  <script is:inline>(() => { const m = document.querySelector(".pieces[data-real]"); if (m && scrollY === 0) scrollTo(0, m.getBoundingClientRect().top - (document.querySelector(".pieces")?.getBoundingClientRect().top ?? 0)) })()</script>
 </Base>
 
-<style>
-  .hero { position: relative; overflow: hidden; padding-block: clamp(4rem, 14vw, 9rem) clamp(3rem, 10vw, 6rem); }
-  .glow { position: absolute; inset: -30% -10% auto; height: 120%; background:
-      radial-gradient(40% 40% at 30% 40%, color-mix(in srgb, var(--yellow) 45%, transparent), transparent 70%),
-      radial-gradient(35% 35% at 70% 35%, color-mix(in srgb, var(--pink) 28%, transparent), transparent 70%),
-      radial-gradient(30% 30% at 55% 70%, color-mix(in srgb, var(--blue) 18%, transparent), transparent 70%);
-    pointer-events: none; }
-  .center { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.25rem; }
-  .word { font-size: clamp(4.5rem, 20vw, 13rem); font-weight: 700; letter-spacing: -0.06em; line-height: 0.85; }
-  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1rem; }
+<script>
+  import type Lenis from "lenis"
+  const lenisOf = () => (window as unknown as { chichiLenis?: Lenis }).chichiLenis
 
-  .head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--gray-200); }
-  h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
-  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 2.5vw, 2rem); list-style: none; padding: 0; }
-  @media (min-width: 900px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-  .empty { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: clamp(3rem, 10vw, 6rem) 1rem; border-radius: 24px; background: var(--gray-50); text-align: center; color: var(--gray-500); font-family: var(--font-display); font-size: 1.125rem; }
+  // Runs on first load and after every client-side navigation (Astro's router keeps this module alive).
+  const init = () => {
+    const loop = document.querySelector<HTMLElement>(".loop")
+    if (!loop) return
+    const copies = [...loop.querySelectorAll<HTMLElement>(".pieces")]
+    const real = loop.querySelector<HTMLElement>(".pieces[data-real]")
+    if (!real) return
+    const pieces = [...loop.querySelectorAll<HTMLElement>("li")]
+    const docTop = (el: HTMLElement) => el.getBoundingClientRect().top + scrollY
+
+    // Endless loop: keep the scroll within one copy's height around the real copy. Moving by exactly one
+    // copy lands on identical pixels (and on a snap point), so the jump is invisible. It only happens once
+    // scrolling has settled, so iOS momentum and Lenis's glide are never cut; two copies of runway on each
+    // side cover any fling in between.
+    // A copy's height is rounded up to whole pixels, so a jump never lands half a pixel off.
+    let period = 0
+    const measure = () => {
+      copies.forEach((c) => { c.style.paddingBottom = "" })
+      const raw = docTop(copies[3]) - docTop(real)
+      copies.forEach((c) => { c.style.paddingBottom = `${Math.ceil(raw) - raw}px` })
+      period = Math.ceil(raw)
+    }
+    measure()
+    // Never while a finger is down (iOS would fight the pan) or while focus is in the list (the focused
+    // card would jump a copy away); the runway covers both until they end.
+    let touching = false
+    const wrap = () => {
+      if (period < innerHeight || touching || loop.contains(document.activeElement)) return
+      const from = docTop(real) - period / 2
+      let y = scrollY
+      while (y < from) y += period
+      while (y >= from + period) y -= period
+      if (y === scrollY) return
+      const lenis = lenisOf()
+      if (lenis) lenis.scrollTo(y, { immediate: true, force: true })
+      else scrollTo({ top: y, behavior: "instant" })
+    }
+    wrap()
+    let settle = 0
+    const onScroll = () => { clearTimeout(settle); settle = window.setTimeout(wrap, 150) }
+    addEventListener("scroll", onScroll, { passive: true })
+    // iOS fires resize on every toolbar collapse; only a width change can alter a copy's height.
+    let width = innerWidth
+    const onResize = () => { if (innerWidth !== width) { width = innerWidth; measure() } onScroll() }
+    const onTouchStart = () => { touching = true; clearTimeout(settle) }
+    const onTouchEnd = () => { touching = false; onScroll() }
+    addEventListener("resize", onResize)
+    addEventListener("touchstart", onTouchStart, { passive: true })
+    addEventListener("touchend", onTouchEnd, { passive: true })
+    addEventListener("touchcancel", onTouchEnd, { passive: true })
+    loop.addEventListener("focusout", onScroll)
+    document.addEventListener("astro:before-swap", () => {
+      clearTimeout(settle)
+      removeEventListener("scroll", onScroll)
+      removeEventListener("resize", onResize)
+      removeEventListener("touchstart", onTouchStart)
+      removeEventListener("touchend", onTouchEnd)
+      removeEventListener("touchcancel", onTouchEnd)
+    }, { once: true })
+
+    // Reveal a piece in every copy at once, so a loop jump never lands on a still-hidden twin.
+    const reveal = new IntersectionObserver((entries) => {
+      entries.filter((e) => e.isIntersecting).forEach((e, n) => {
+        const k = (e.target as HTMLElement).dataset.k
+        loop.querySelectorAll<HTMLElement>(`li[data-k="${k}"]`).forEach((li) => {
+          li.style.setProperty("--d", `${n * 0.005}s`)
+          li.classList.add("is-in")
+          reveal.unobserve(li)
+        })
+      })
+    }, { rootMargin: "0px 0px -10% 0px" })
+    pieces.forEach((li) => reveal.observe(li))
+
+    // The field takes the colour of the piece in front of you: the centred one on a phone, the hovered one
+    // with a mouse. Two stacked tint layers swap opacity, so nothing repaints during the 0.8s fade.
+    const tints = [...document.querySelectorAll<HTMLElement>(".field .tint")]
+    const home = tints.find((t) => t.hasAttribute("data-on"))?.style.getPropertyValue("--accent") ?? ""
+    // The incoming layer fades in on top; the one beneath is dropped only once covered (no dip to ink mid-fade).
+    const tint = (li?: HTMLElement) => {
+      const accent = li ? `var(--${li.dataset.accent})` : home
+      const top = tints.find((t) => t.hasAttribute("data-top"))
+      const next = tints.find((t) => t !== top)
+      if (!top || !next || top.style.getPropertyValue("--accent") === accent) return
+      top.toggleAttribute("data-top", false)
+      next.style.setProperty("--accent", accent)
+      next.toggleAttribute("data-top", true)
+      next.toggleAttribute("data-on", true)
+      next.addEventListener("transitionend", () => { if (next.hasAttribute("data-top")) top.toggleAttribute("data-on", false) }, { once: true })
+    }
+    if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      pieces.forEach((li) => {
+        li.addEventListener("pointerenter", () => tint(li))
+        li.addEventListener("pointerleave", () => tint())
+      })
+    } else {
+      const centred = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) tint(e.target as HTMLElement) })
+      }, { rootMargin: "-45% 0px -45% 0px" })
+      pieces.forEach((li) => centred.observe(li))
+      document.addEventListener("astro:before-swap", () => centred.disconnect(), { once: true })
+    }
+    // Tells the head watchdog the reveal is live; without it the tiles are shown after 2.5s.
+    document.documentElement.dataset.reveal = "1"
+  }
+  document.addEventListener("astro:page-load", init)
+  // Land on the real copy before the incoming page is shown (the router has just scrolled to the top).
+  document.addEventListener("astro:after-swap", () => {
+    const [first, real] = [document.querySelector(".pieces"), document.querySelector(".pieces[data-real]")]
+    if (first && real && scrollY === 0) scrollTo({ top: real.getBoundingClientRect().top - first.getBoundingClientRect().top, behavior: "instant" })
+  })
+</script>
+
+<style>
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .field-grid { padding-top: calc(var(--header-h) + env(safe-area-inset-top) + 2rem); }
+  .pieces { list-style: none; padding: 0; display: grid; gap: 0; }
+  .pieces + .pieces { margin-top: clamp(2rem, 5vw, 5rem); }
+  /* Pieces float on the field: a loose 12-column constellation, each slot its own column, width and drop. */
+  @media (min-width: 900px) {
+    .pieces { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(1rem, 2vw, 2rem); row-gap: clamp(2rem, 5vw, 5rem); }
+    .pieces li { grid-column: var(--col); width: var(--w); justify-self: center; margin-top: var(--drop); }
+    .pieces li:nth-child(7n + 1) { --col: 2 / span 3; --w: 82%; --drop: 2vw; }
+    .pieces li:nth-child(7n + 2) { --col: 6 / span 3; --w: 70%; --drop: 0; }
+    .pieces li:nth-child(7n + 3) { --col: 10 / span 3; --w: 88%; --drop: 9vw; }
+    .pieces li:nth-child(7n + 4) { --col: 3 / span 3; --w: 76%; --drop: -1vw; }
+    .pieces li:nth-child(7n + 5) { --col: 7 / span 3; --w: 84%; --drop: 7vw; }
+    .pieces li:nth-child(7n + 6) { --col: 1 / span 3; --w: 72%; --drop: 4vw; }
+    .pieces li:nth-child(7n + 7) { --col: 5 / span 3; --w: 80%; --drop: 2vw; }
+  }
+  /* Phone, as skylrk: one piece per screen (100svh, so the browser bars never cut it), centred, contained,
+     its tags right under it; the page snaps piece to piece. Padding is symmetric so the piece sits dead centre. */
+  @media (max-width: 899px) and (orientation: portrait) {
+    .field-grid { padding-top: 0; }
+    .pieces + .pieces { margin-top: 0; }
+    .pieces li { height: 100svh; display: grid; place-items: center; scroll-snap-align: center; scroll-snap-stop: always;
+      padding: calc(var(--header-h) + env(safe-area-inset-top)) var(--gutter) calc(var(--header-h) + env(safe-area-inset-bottom)); }
+    .pieces li :global(.card img) { width: auto; max-width: min(86vw, 26rem); max-height: min(58svh, calc(100svh - 2 * var(--header-h) - 4rem)); object-fit: contain; }
+  }
+  @media (max-width: 899px) and (orientation: portrait) and (pointer: coarse) {
+    :global(html:has(.loop)) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
+  }
+  /* Landscape phones: a plain centred column. */
+  @media (max-width: 899px) and (orientation: landscape) {
+    .pieces { row-gap: 3rem; }
+    .pieces + .pieces { margin-top: 3rem; }
+    .pieces li { width: min(50%, 20rem); justify-self: center; }
+  }
+  /* The piece (photo and tags together) shrinks to half size as it leaves the screen and grows back as the
+     next arrives (skylrk's slide scale). Peak at the snap point. */
+  @supports (animation-timeline: view()) {
+    @media (max-width: 899px) and (orientation: portrait) and (prefers-reduced-motion: no-preference) {
+      .pieces li :global(.card) { animation: focus linear both; animation-timeline: view(); }
+    }
+  }
+  @keyframes focus { 0%, 100% { scale: 0.5; } 50% { scale: 1; } }
+  /* Slow drift on desktop, staggered per piece (decorative, off with reduced motion). */
+  @media (min-width: 900px) { .pieces li { animation: drift calc(9s + var(--i) * 0.7s) ease-in-out calc(var(--i) * -1.3s) infinite alternate; } }
+  @keyframes drift { from { translate: 0 -6px; } to { translate: 0 8px; } }
+  /* Reveal on scroll, as skylrk: each piece fades in once as it crosses 10% above the fold, its tags 0.45s later.
+     Opacity only (no layout shift); hidden only when JS runs and motion is allowed. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .pieces li:not([data-first]) { opacity: 0; transition: opacity 0.4s cubic-bezier(0.87, 0, 0.13, 1) var(--d, 0s); }
+    :global(html.js) .pieces li:not([data-first]) :global(.label) { opacity: 0; transition: opacity 0.35s cubic-bezier(0.87, 0, 0.13, 1) calc(var(--d, 0s) + 0.45s); }
+    :global(html.js) .pieces li.is-in, :global(html.js) .pieces li.is-in :global(.label) { opacity: 1; }
+    /* A keyboard-focused tile is never invisible, even inside the bottom 10% band. */
+    :global(html.js) .pieces li:focus-within, :global(html.js) .pieces li:focus-within :global(.label) { opacity: 1; transition-delay: 0s; }
+    /* First fold fades on paint, not on JS, so LCP isn't held back by the script. */
+    .pieces li[data-first] :global(.card img) { animation: reveal 0.4s cubic-bezier(0.87, 0, 0.13, 1) backwards; }
+    .pieces li[data-first] :global(.label) { animation: reveal 0.35s cubic-bezier(0.87, 0, 0.13, 1) 0.45s backwards; }
+  }
+  @keyframes reveal { from { opacity: 0; } }
+  .empty { display: flex; flex-direction: column; align-items: center; gap: 1rem; max-width: 28rem; margin: 10vh auto; padding: 2.5rem 1.5rem; border-radius: 16px; text-align: center; }
 </style>
