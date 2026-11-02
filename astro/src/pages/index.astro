@@ -154,17 +154,18 @@ const copies = [false, false, true, false, false]
   .field-grid { padding-top: calc(var(--header-h) + env(safe-area-inset-top) + 2rem); }
   .pieces { list-style: none; padding: 0; display: grid; gap: 0; }
   .pieces + .pieces { margin-top: clamp(2rem, 5vw, 5rem); }
-  /* Pieces float on the field: a loose 12-column constellation, each slot its own column, width and drop. */
+  /* Pieces float on the field: a loose 12-column constellation, each slot its own column and drop.
+     Square frames sized as skylrk's floating grid at 1440: 216px tiles (15vw), one larger at 302px (21vw). */
   @media (min-width: 900px) {
     .pieces { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(1rem, 2vw, 2rem); row-gap: clamp(2rem, 5vw, 5rem); }
     .pieces li { grid-column: var(--col); width: var(--w); justify-self: center; margin-top: var(--drop); }
-    .pieces li:nth-child(7n + 1) { --col: 2 / span 3; --w: 82%; --drop: 2vw; }
-    .pieces li:nth-child(7n + 2) { --col: 6 / span 3; --w: 70%; --drop: 0; }
-    .pieces li:nth-child(7n + 3) { --col: 10 / span 3; --w: 88%; --drop: 9vw; }
-    .pieces li:nth-child(7n + 4) { --col: 3 / span 3; --w: 76%; --drop: -1vw; }
-    .pieces li:nth-child(7n + 5) { --col: 7 / span 3; --w: 84%; --drop: 7vw; }
-    .pieces li:nth-child(7n + 6) { --col: 1 / span 3; --w: 72%; --drop: 4vw; }
-    .pieces li:nth-child(7n + 7) { --col: 5 / span 3; --w: 80%; --drop: 2vw; }
+    .pieces li:nth-child(7n + 1) { --col: 2 / span 3; --w: 15vw; --drop: 2vw; }
+    .pieces li:nth-child(7n + 2) { --col: 6 / span 3; --w: 15vw; --drop: 0; }
+    .pieces li:nth-child(7n + 3) { --col: 10 / span 3; --w: 21vw; --drop: 9vw; }
+    .pieces li:nth-child(7n + 4) { --col: 3 / span 3; --w: 15vw; --drop: -1vw; }
+    .pieces li:nth-child(7n + 5) { --col: 7 / span 3; --w: 15vw; --drop: 7vw; }
+    .pieces li:nth-child(7n + 6) { --col: 1 / span 3; --w: 15vw; --drop: 4vw; }
+    .pieces li:nth-child(7n + 7) { --col: 5 / span 3; --w: 15vw; --drop: 2vw; }
   }
   /* Phone, as skylrk: one piece per screen (100svh, so the browser bars never cut it), centred, contained,
      its tags right under it; the page snaps piece to piece. Padding is symmetric so the piece sits dead centre. */
@@ -172,8 +173,10 @@ const copies = [false, false, true, false, false]
     .field-grid { padding-top: 0; }
     .pieces + .pieces { margin-top: 0; }
     .pieces li { height: 100svh; display: grid; place-items: center; scroll-snap-align: center; scroll-snap-stop: always;
-      padding: calc(var(--header-h) + env(safe-area-inset-top)) var(--gutter) calc(var(--header-h) + env(safe-area-inset-bottom)); }
-    .pieces li :global(.card img) { width: auto; max-width: min(86vw, 26rem); max-height: min(58svh, calc(100svh - 2 * var(--header-h) - 4rem)); object-fit: contain; }
+      padding: calc(var(--header-h) + env(safe-area-inset-top)) 0 calc(var(--header-h) + env(safe-area-inset-bottom)); }
+    /* skylrk's mobile slide: a square frame 342px wide at 390 (viewport minus 1.5rem a side), never taller than 53svh. */
+    .pieces li :global(.card img) { width: min(calc(100vw - 3rem), 53svh); aspect-ratio: 1; object-fit: contain; }
+    .pieces li :global(.label) { padding-inline: var(--gutter); }
   }
   @media (max-width: 899px) and (orientation: portrait) and (pointer: coarse) {
     :global(html:has(.loop)) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
